@@ -1,9 +1,14 @@
+# A straight-forward CNN for fitting the MNIST dataset
+# Gets about 95% accurate. Meh.
+
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import mnist_parse
 import sys
 #%matplotlib inline
+
+tf.set_random_seed(42)
 
 X_train,y_train = mnist_parse.parse("train")
 X_train = X_train.reshape(60000,28,28,1)/255.
@@ -83,8 +88,9 @@ y_sample = y_train_batches[0]
 
 updates = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
 
-
-
+stepno = 0
+steps = []
+costs = []
 with tf.Session() as sess:
     init = tf.global_variables_initializer()
     sess.run(init)
@@ -98,7 +104,9 @@ with tf.Session() as sess:
             frac_right = np.sum(pred == np.argmax(y_sample,1))/y_sample.shape[0]
 
             print(epoch,batch,costnum,frac_right)
-
+            steps.append(stepno)
+            stepno += 1
+            costs.append(costnum)
 
 
             #print(pred)
@@ -108,25 +116,7 @@ with tf.Session() as sess:
     print(pred.shape,y_test.shape,np.argmax(y_test,1).shape)
     print("test frac right:",np.sum(pred == np.argmax(y_test,1))/y_test.shape[0]  )
 
-sys.exit(0)
-
-
-
 fig = plt.figure()
-ax1 = fig.add_subplot(1,2,1)
-ax2 = fig.add_subplot(1,2,2)
-
-
-
-with tf.Session() as sess:
-
-    init = tf.global_variables_initializer()
-    sess.run(init)
-    out = sess.run(Z1,feed_dict={X:X_sample})
-    print(out.shape)
-
-    ax1.imshow(X_sample[50,:,:,:].squeeze())
-    ax2.imshow(out[50,:,:,0].squeeze())
-
-
-    plt.savefig("foo.png")
+ax = fig.add_subplot(1,1,1)
+ax.plot(steps,costs)
+plt.savefig("cost.png")

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
 from keras.datasets import mnist
 from keras.models import Sequential
 
@@ -35,7 +36,6 @@ X_test/=255
 Y_train = np_utils.to_categorical(y_train, 10)
 Y_test = np_utils.to_categorical(y_test, 10)
 
-model = Sequential()
 
 model = Sequential()
 
@@ -63,7 +63,24 @@ model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=['accur
 
 print(model.summary())
 
-model.fit(x=X_train,y=Y_train,batch_size=100,epochs=1)
+
+generator = ImageDataGenerator(rotation_range=8, 
+                               width_shift_range=0.08, 
+                               shear_range=0.3,
+                               height_shift_range=0.08, 
+                               zoom_range=0.08)
+test_gen = ImageDataGenerator()
+
+train_generator = generator.flow(X_train, Y_train, batch_size=64)
+test_generator = test_gen.flow(X_test, Y_test, batch_size=64)
+
+model.fit_generator(train_generator, steps_per_epoch=60000//64, epochs=5,
+                    validation_data=test_generator, validation_steps=10000//64)
+
+
+#model.fit(x=X_train,y=Y_train,batch_size=100,epochs=1)
+
+model.save("trained-model-keras.hd5")
 
 Y_test_pred = model.predict(x=X_test)
 Y_train_pred = model.predict(x=X_train)
@@ -72,3 +89,6 @@ pred_train = np.argmax(Y_train_pred,axis=1)
 
 print(classification_report(pred_test,y_test))
 print(classification_report(pred_train,y_train))
+
+print(accuracy_score(pred_test,y_test))
+print(accuracy_score(pred_train,y_train))
